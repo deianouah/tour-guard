@@ -1,0 +1,6 @@
+Options -Indexes
+
+# Source/config files are never meant to be requested directly.
+<FilesMatch "^(config|config\.example|lib|s3)\.php$">
+  Require all denied
+</FilesMatch>

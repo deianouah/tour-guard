@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pretend foreign website</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; line-height: 1.7; }
+    iframe { width: 100%; height: 360px; border: 2px dashed #c0392b; border-radius: 8px; background: #fafafa; }
+    pre { background: #111; color: #0f0; padding: .8rem; border-radius: 8px; white-space: pre-wrap; word-break: break-all; min-height: 2.5rem; }
+    input { width: 100%; padding: .4rem; font: inherit; box-sizing: border-box; }
+    code { background: #f1f1f1; padding: 0 4px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>Pretend I am another website</h1>
+  <p>This page is on <b id="me"></b> and tries to use the tour that lives on <b id="target"></b>.</p>
+
+  <h3>1) Embed the tour in an iframe</h3>
+  <iframe id="f" title="stolen tour"></iframe>
+  <p>Empty frame or an error page = the protection works. If the tour plays, this origin is in <code>allowed_embedders</code>.</p>
+
+  <h3>2) Read the signed links from JavaScript</h3>
+  <pre id="out1">running...</pre>
+
+  <h3>3) Hotlink a stolen image URL</h3>
+  <p>Get a signed link another way (for example with <code>curl</code> on <code>tour.php?id=museum&amp;json=1</code>),
+  paste the <code>src</code> value below (prefix it with the tour-guard folder URL on the other host name).</p>
+  <input id="stolen" placeholder="http://localhost/tour-guard/img.php?t=museum&amp;s=hall&amp;exp=...&amp;sig=...">
+  <p><button id="go">Load as &lt;img&gt;</button></p>
+  <pre id="out2">waiting...</pre>
+  <img id="probe" alt="" style="max-width:200px; display:none">
+
+  <script>
+    const otherHost = location.hostname === 'localhost' ? '127.0.0.1' : 'localhost';
+    const folder = location.pathname.replace(/[^/]*$/, '');
+    const base = location.protocol + '//' + otherHost + (location.port ? ':' + location.port : '') + folder;
+
+    document.getElementById('me').textContent = location.origin;
+    document.getElementById('target').textContent = base;
+
+    document.getElementById('f').src = base + 'tour.php?id=museum';
+
+    fetch(base + 'tour.php?id=museum&json=1')
+      .then((r) => r.text().then((t) => ({ status: r.status, text: t })))
+      .then((r) => { document.getElementById('out1').textContent = 'READABLE (bad): HTTP ' + r.status + ' ' + r.text.slice(0, 120); })
+      .catch((e) => { document.getElementById('out1').textContent = 'blocked by the browser (good): ' + e.message; });
+
+    document.getElementById('go').addEventListener('click', () => {
+      const img = document.getElementById('probe');
+      const out = document.getElementById('out2');
+      img.onload = () => { out.textContent = 'IMAGE LOADED (bad)'; img.style.display = 'block'; };
+      img.onerror = () => { out.textContent = 'blocked (good): the server or browser refused the cross-site image request'; img.style.display = 'none'; };
+      img.src = document.getElementById('stolen').value;
+    });
+  </script>
+</body>
+</html>

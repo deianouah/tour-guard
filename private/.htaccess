@@ -1,0 +1,3 @@
+# Blocks direct browser access to everything in this folder (Apache 2.4).
+# img.php reads the files from disk, so it is not affected.
+Require all denied
